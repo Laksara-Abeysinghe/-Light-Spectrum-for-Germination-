@@ -1,0 +1,235 @@
+Light_Spactrum
+Laksara_Abeysinghe
+July 27, 2021
+The researcher has used light spactrum (as treatment with 3 different levels: Red, Blue, Control) for measure germination potential how they are significantly differing.
+* He has measured different responses factors. Such as,
+
+Germinated_seeds(%),
+Total_seedling_Length,
+Total_Length,
+Leaf_Length,
+Leaf_Width.
+(df <- read.csv("light.csv"))
+##   factors Germinated_seeds... Total_seedling_Length Total_Length Leaf_Length
+## 1     Red                  98                6.9925        12.10        2.15
+## 2     Red                  96                6.9550        11.89        2.26
+## 3     Red                 100                6.8100        11.99        2.14
+## 4    Blue                  72                4.2950        15.55        2.98
+## 5    Blue                  78                4.3000        15.33        2.82
+## 6    Blue                  86                4.6300        15.48        3.01
+## 7 Control                  84                7.3600         7.76        1.84
+## 8 Control                  94                7.4950         7.94        2.17
+## 9 Control                  90                7.6150         7.40        1.71
+##   Leaf_Width
+## 1       0.98
+## 2       1.08
+## 3       1.14
+## 4       1.19
+## 5       1.24
+## 6       1.31
+## 7       0.78
+## 8       1.02
+## 9       0.97
+ANOVA Models
+library(dplyr)
+Lights <- as.factor(df$factors)
+x <- list(
+  df$Germinated_seeds...,
+  df$Total_seedling_Length, 
+  df$Total_Length, 
+  df$Leaf_Length,
+  df$Leaf_Width
+  )
+
+models <- function(x) {
+  ANOV <- vector("list", length(x))
+  for (i in seq_along(x)) {
+    ANOV[[i]] <- anova(lm(x[[i]] ~ Lights))
+  }
+  ANOV
+} 
+
+results <- models(x)
+names(results) <- c( "Germinated_seeds...", "Total_seedling_Length", 
+                      "Total_Length", "Leaf_Length", "Leaf_Width")
+results
+## $Germinated_seeds...
+## Analysis of Variance Table
+## 
+## Response: x[[i]]
+##           Df Sum Sq Mean Sq F value  Pr(>F)  
+## Lights     2 562.67 281.333  10.729 0.01043 *
+## Residuals  6 157.33  26.222                  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## $Total_seedling_Length
+## Analysis of Variance Table
+## 
+## Response: x[[i]]
+##           Df  Sum Sq Mean Sq F value    Pr(>F)    
+## Lights     2 16.1268  8.0634  387.52 4.533e-07 ***
+## Residuals  6  0.1248  0.0208                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## $Total_Length
+## Analysis of Variance Table
+## 
+## Response: x[[i]]
+##           Df Sum Sq Mean Sq F value    Pr(>F)    
+## Lights     2 90.518  45.259  1367.8 1.048e-08 ***
+## Residuals  6  0.199   0.033                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## $Leaf_Length
+## Analysis of Variance Table
+## 
+## Response: x[[i]]
+##           Df Sum Sq Mean Sq F value    Pr(>F)    
+## Lights     2 1.7050 0.85248  35.969 0.0004562 ***
+## Residuals  6 0.1422 0.02370                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## $Leaf_Width
+## Analysis of Variance Table
+## 
+## Response: x[[i]]
+##           Df  Sum Sq  Mean Sq F value  Pr(>F)  
+## Lights     2 0.15749 0.078744  9.0165 0.01556 *
+## Residuals  6 0.05240 0.008733                  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+So according to these results we can conclude that outputs by hypothetically as,
+
+Null hypothesis (H0) :- There is same effect of 3 type of light spacrtrum on four different factors.
+
+Alternative hypothesis (H1) :-The effects on four different factors are not all the same. (At least on pair of light spactrum are different).
+
+p_val <- vector("double", length(results))
+concl <- vector("double", length(results))
+for (i in seq_along(results)) {
+  p_val[[i]] <- results[[i]][[5]][1]
+  concl[[i]] <- ifelse(p_val[[i]] < 0.05, "Significant", "Not_Significant")
+}
+
+P_Results <- tribble(
+  ~Factor,
+  "Germinated_seeds...", "Total_seedling_Length", 
+  "Total_Length", "Leaf_Length", "Leaf_Width"
+) %>%
+  mutate(P_Values = p_val, Conclusions = concl)
+
+(P_Results)
+## # A tibble: 5 x 3
+##   Factor                    P_Values Conclusions
+##   <chr>                        <dbl> <chr>      
+## 1 Germinated_seeds...   0.0104       Significant
+## 2 Total_seedling_Length 0.000000453  Significant
+## 3 Total_Length          0.0000000105 Significant
+## 4 Leaf_Length           0.000456     Significant
+## 5 Leaf_Width            0.0156       Significant
+In above graph we can see 3 type of lights spactrum have significantly different on all different factors. (All p_values are less than the alpha (0.05) value)
+
+Mean Comparisons
+comparisions <- function(x) {
+  comp <- vector("list", length(x))
+  for (i in seq_along(x)) {
+    comp[[i]] <- TukeyHSD(aov(lm(x[[i]] ~ Lights)))
+  }
+  comp
+} 
+mean_com <- comparisions(x)
+names(mean_com) <- c( "Germinated_seeds...", "Total_seedling_Length", 
+                      "Total_Length", "Leaf_Length", "Leaf_Width")
+mean_com
+## $Germinated_seeds...
+##   Tukey multiple comparisons of means
+##     95% family-wise confidence level
+## 
+## Fit: aov(formula = lm(x[[i]] ~ Lights))
+## 
+## $Lights
+##                   diff       lwr      upr     p adj
+## Control-Blue 10.666667 -2.162053 23.49539 0.0956406
+## Red-Blue     19.333333  6.504614 32.16205 0.0085771
+## Red-Control   8.666667 -4.162053 21.49539 0.1759680
+## 
+## 
+## $Total_seedling_Length
+##   Tukey multiple comparisons of means
+##     95% family-wise confidence level
+## 
+## Fit: aov(formula = lm(x[[i]] ~ Lights))
+## 
+## $Lights
+##                    diff        lwr        upr     p adj
+## Control-Blue  3.0816667  2.7202901  3.4430432 0.0000007
+## Red-Blue      2.5108333  2.1494568  2.8722099 0.0000017
+## Red-Control  -0.5708333 -0.9322099 -0.2094568 0.0068416
+## 
+## 
+## $Total_Length
+##   Tukey multiple comparisons of means
+##     95% family-wise confidence level
+## 
+## Fit: aov(formula = lm(x[[i]] ~ Lights))
+## 
+## $Lights
+##                   diff       lwr       upr   p adj
+## Control-Blue -7.753333 -8.209044 -7.297622 0.0e+00
+## Red-Blue     -3.460000 -3.915711 -3.004289 1.1e-06
+## Red-Control   4.293333  3.837622  4.749044 5.0e-07
+## 
+## 
+## $Leaf_Length
+##   Tukey multiple comparisons of means
+##     95% family-wise confidence level
+## 
+## Fit: aov(formula = lm(x[[i]] ~ Lights))
+## 
+## $Lights
+##                    diff        lwr        upr     p adj
+## Control-Blue -1.0300000 -1.4156761 -0.6443239 0.0004367
+## Red-Blue     -0.7533333 -1.1390094 -0.3676572 0.0023508
+## Red-Control   0.2766667 -0.1090094  0.6623428 0.1494900
+## 
+## 
+## $Leaf_Width
+##   Tukey multiple comparisons of means
+##     95% family-wise confidence level
+## 
+## Fit: aov(formula = lm(x[[i]] ~ Lights))
+## 
+## $Lights
+##                    diff         lwr         upr     p adj
+## Control-Blue -0.3233333 -0.55745337 -0.08921329 0.0128978
+## Red-Blue     -0.1800000 -0.41412004  0.05412004 0.1221952
+## Red-Control   0.1433333 -0.09078671  0.37745337 0.2247583
+In here we can conclude what group exactly differ from the control group. That is in hypothetically (Reject H0 when p_value is less than the alpha(0.05) value)
+
+H0 :- mean(i) = mean(control)
+
+H1 :- mean(i) != mean(control ) for some i, (mean(i): mean of each treatment)
+
+According to these results we can see basically,
+
++Two types of factor levels are significantly different from the control group ("Total_seedling_Length", "Total_Length") and
+
++Two types of factor levels are not significantly different from the control group ("Germinated_seeds(%)", "Leaf_Width").
+
++In ("Leaf_Length") factor Blue light spectrum is signifficantly different from the control group and Red light spectrum is not.
+
+Factor	Light spectrum	From Control Group
+Germinated_seeds(%)	Red	Sgnificantly Not Different
+-	Blue	Sgnificantly Not Different
+Total_seedling_Length	Red	Sgnificantly Different
+-	Blue	Sgnificantly Different
+Total_Length	Red	Sgnificantly Different
+-	Blue	Sgnificantly Different
+Leaf_Lengt	Red	Sgnificantly Not Different
+-	Blue	Sgnificantly Different
+Leaf_Width	Red	Sgnificantly Not Different
+-	Blue	Sgnificantly Not Different
